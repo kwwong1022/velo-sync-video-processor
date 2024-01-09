@@ -5,6 +5,8 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: python3.9
+  timeout: 30
+  region: ap-east-1
 
 functions:
   hello:
