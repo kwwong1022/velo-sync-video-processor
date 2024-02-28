@@ -5,9 +5,9 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: python3.9
-  timeout: 30
+  timeout: 60
   region: ap-east-1
 
 functions:
-  hello:
-    handler: handler.hello
+  app:
+    handler: handler.app
