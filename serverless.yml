@@ -11,3 +11,4 @@ provider:
 functions:
   app:
     handler: handler.app
+    name: velo-sync-video-processor-${sls:stage}
