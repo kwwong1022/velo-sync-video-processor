@@ -1,4 +1,4 @@
-service: velo-sync-image-processor
+service: velo-sync-video-processor
 
 frameworkVersion: '3'
 
