@@ -1,2 +1,5 @@
 .serverless
 .venv
+
+test.py
+python.zip
