@@ -16,28 +16,10 @@ provider:
             - s3:GetObjectAcl
             - s3:PutObject
             - s3:PutObjectAcl
+            - s3:ListObjects
           Resource: '*'
 
 functions:
   app:
     handler: handler.app
     name: velo-sync-video-processor-${sls:stage}
-
-resources:
-  Resources:
-    VeloSyncStorageBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: velo-sync-storage-bucket-${sls:stage}
-        CorsConfiguration:
-          CorsRules:
-            - AllowedOrigins:
-                - '*'
-              AllowedHeaders:
-                - '*'
-              AllowedMethods:
-                - GET
-                - PUT
-                - POST
-                - HEAD
-              MaxAge: 3000
