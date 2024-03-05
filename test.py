@@ -1,43 +1,35 @@
 import boto3
 import cv2 as cv
-import numpy as np
 import tempfile
 
-
-# retrieve video from s3 by keyname
 s3 = boto3.client('s3')
-response = s3.get_object(Bucket='velo-sync-storage-bucket-dev', Key='video/dog.mp4')
-video_bytes = response['Body'].read()
-print(response)
+s3_response = s3.get_object(Bucket='velo-sync-storage-bucket-dev', Key='video/dog.mp4')
+video_bytes = s3_response['Body'].read()
 
-
-# Save the video as a temporary file
-temp_file = tempfile.NamedTemporaryFile(delete=False)
+temp_file = tempfile.NamedTemporaryFile(suffix='.mp4', delete=True)
 temp_file.write(video_bytes)
-temp_file.close()
+vidcap = cv.VideoCapture(temp_file.name)
 
-# Open the temporary file with OpenCV
-cap = cv.VideoCapture(temp_file.name)
+fourcc = cv.VideoWriter_fourcc(*'mp4v')
+frame_rate = 30
+size = (int(vidcap.get(3)), int(vidcap.get(4)))
+output_video = cv.VideoWriter(temp_file.name, fourcc, frame_rate, size)
 
-# Read until video is completed 
-while(cap.isOpened()): 
-      
-# Capture frame-by-frame 
-    ret, frame = cap.read() 
+while(True): 
+    ret, frame = vidcap.read() 
+
     if ret == True: 
-    # Display the resulting frame 
-        cv.imshow('Frame', frame) 
-          
-    # Press Q on keyboard to exit 
-        if cv.waitKey(25) & 0xFF == ord('q'): 
-            break
+        cv.putText(frame, 'TEXT ON VIDEO', (50, 50), 
+                cv.FONT_HERSHEY_SIMPLEX, 
+                1, (0, 255, 255), 2, cv.LINE_4)
+        
+        output_video.write(frame)
   
-# Break the loop
     else:
         break
-  
-cap.release()
-cv.destroyAllWindows() 
 
+output_video.release()
+vidcap.release()
 
-# upload processed video to s3
+s3.upload_file(temp_file.name, 'velo-sync-storage-bucket-dev', 'video/dog_modified.mp4')
+temp_file.close()
