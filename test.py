@@ -2,18 +2,26 @@ import boto3
 import cv2 as cv
 import tempfile
 
+# Setup aws s3 client
 s3 = boto3.client('s3')
-s3_response = s3.get_object(Bucket='velo-sync-storage-bucket-dev', Key='video/dog.mp4')
+
+# Retrieve video from s3
+bucket = 'velo-sync-storage-bucket-dev'
+key = 'video/dog.mp4'
+suffix = '.mp4'
+s3_response = s3.get_object(Bucket=bucket, Key=key)
 video_bytes = s3_response['Body'].read()
 
-temp_file = tempfile.NamedTemporaryFile(suffix='.mp4', delete=True)
+# Save video to temp file to create video capture
+temp_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=True)
 temp_file.write(video_bytes)
 vidcap = cv.VideoCapture(temp_file.name)
 
+# Create output video
 fourcc = cv.VideoWriter_fourcc(*'mp4v')
-frame_rate = 30
-size = (int(vidcap.get(3)), int(vidcap.get(4)))
-output_video = cv.VideoWriter(temp_file.name, fourcc, frame_rate, size)
+fps = 30
+size = (int(vidcap.get(3)), int(vidcap.get(4)))  # 3: width, 4: height
+output_video = cv.VideoWriter(temp_file.name, fourcc, fps, size)
 
 while(True): 
     ret, frame = vidcap.read() 
@@ -31,5 +39,6 @@ while(True):
 output_video.release()
 vidcap.release()
 
+# Upload output video to s3
 s3.upload_file(temp_file.name, 'velo-sync-storage-bucket-dev', 'video/dog_modified.mp4')
 temp_file.close()
