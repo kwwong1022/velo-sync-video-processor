@@ -1,4 +1,3 @@
 .serverless
 .venv
-
-python.zip
+layer

@@ -23,3 +23,10 @@ functions:
   app:
     handler: handler.app
     name: velo-sync-video-processor-${sls:stage}
+
+package:
+  exclude:
+    - .venv/**
+    - layer/**
+    - test.py
+    - requirements.txt
