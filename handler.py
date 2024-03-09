@@ -6,6 +6,7 @@ import cv2 as cv
 def app(event, context):
     # Setup aws s3 client
     s3 = boto3.client('s3')
+    print('Event: ' + json.dumps(event))
 
     # Retrieve video from s3
     bucket = 'velo-sync-storage-bucket-dev'
@@ -23,6 +24,7 @@ def app(event, context):
     fourcc = cv.VideoWriter_fourcc(*'mp4v')
     fps = 30
     size = (int(vidcap.get(3)), int(vidcap.get(4)))  # 3: width, 4: height
+    temp_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=True)
     output_video = cv.VideoWriter(temp_file.name, fourcc, fps, size)
 
     while(True): 
