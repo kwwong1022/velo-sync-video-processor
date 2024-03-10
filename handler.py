@@ -1,6 +1,9 @@
 import json
+import gpxpy
 import tempfile
+import gpxpy.gpx
 import cv2 as cv
+import xml.etree.ElementTree as ET
 from src.constant.constant import S3_STORAGE_BUCKET, SUFFIX_MP4
 from src.lib.common import get_video_process, get_s3_file, put_s3_file
 
@@ -15,14 +18,24 @@ def app(event, context):
 
     # Retrieve files from s3
     video_bytes = get_s3_file(video_key).read()
-    gpx = get_s3_file(gpx_key).read()
-    style = get_s3_file(style_key).read()
+    gpx_bytes = get_s3_file(gpx_key).read()
+    style_bytes = get_s3_file(style_key).read()
 
-    # Handle original video
+    # Prepare video
     temp_video_file = tempfile.NamedTemporaryFile(suffix=SUFFIX_MP4, delete=True)
     temp_video_file.write(video_bytes)
     input_video = cv.VideoCapture(temp_video_file.name)
     temp_video_file.close()
+
+    # Prepare gpx data
+    gpx = gpxpy.parse(gpx_bytes)
+
+
+    # Prepare style data
+    style_string = style_bytes.decode('utf-8')
+    root = ET.fromstring(style_string)
+    print(root)
+
 
     # Create output video
     fourcc = cv.VideoWriter_fourcc(*'mp4v')
@@ -31,15 +44,18 @@ def app(event, context):
     temp_video_file = tempfile.NamedTemporaryFile(suffix=SUFFIX_MP4, delete=True)
     output_video = cv.VideoWriter(temp_video_file.name, fourcc, fps, size)
 
+    frame_count = 0
+
     while(True): 
         ret, frame = input_video.read() 
 
-        if ret == True: 
+        if ret: 
             cv.putText(frame, 'TEXT ON VIDEO', (50, 50), 
                     cv.FONT_HERSHEY_SIMPLEX, 
                     1, (0, 255, 255), 2, cv.LINE_4)
                 
             output_video.write(frame)
+            frame_count += 1
         
         else:
             break
@@ -59,3 +75,6 @@ def app(event, context):
             "input": event,
         })
     }
+
+# For localhost test
+# app({}, {})
