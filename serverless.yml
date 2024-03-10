@@ -12,6 +12,13 @@ provider:
       statements:
         - Effect: Allow
           Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchWriteItem
             - s3:GetObject
             - s3:GetObjectAcl
             - s3:PutObject
@@ -30,3 +37,4 @@ package:
     - layer/**
     - test.py
     - requirements.txt
+    - __pycache__

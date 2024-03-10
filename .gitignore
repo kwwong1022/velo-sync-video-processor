@@ -1,3 +1,5 @@
 .serverless
 .venv
+.env
 layer
+__pycache__
