@@ -27,14 +27,40 @@ def app(event, context):
     input_video = cv.VideoCapture(temp_video_file.name)
     temp_video_file.close()
 
-    # Prepare gpx data
-    gpx = gpxpy.parse(gpx_bytes)
-
-
     # Prepare style data
     style_string = style_bytes.decode('utf-8')
     root = ET.fromstring(style_string)
-    print(root)
+    print('root', root)
+
+
+    # Prepare gpx data
+    gpx_metric = []
+    gpx = gpxpy.parse(gpx_bytes)
+
+    for track in gpx.tracks:
+        for segment in track.segments:
+            for point in segment.points:
+                # Handle gpx general information
+                time = point.time
+                lat = point.latitude
+                long = point.longitude
+                atemp = hr = cad = power = 0
+
+                for extension in point.extensions:
+                    isTpe = 'TrackPointExtension' in extension.tag
+
+                    if isTpe:
+                        # Handle track point extension values
+                        for tpe in extension:
+                            atemp = tpe.text if 'atemp' in tpe.tag else 0
+                            hr = tpe.text if 'hr' in tpe.tag else 0
+                            cad = tpe.text if 'cad' in tpe.tag else 0
+
+                    else:
+                        # Handle power data
+                        power = extension.text if 'power' in extension.tag else 0
+
+                gpx_metric.append({ 'time':time, 'lat':lat, 'long':long, 'atemp':atemp, 'hr':hr, 'cad':cad, 'power':power })
 
 
     # Create output video
@@ -64,7 +90,7 @@ def app(event, context):
     input_video.release()
 
     # Upload output video to s3
-    put_s3_file(temp_video_file.name, S3_STORAGE_BUCKET, '71c2b411-5ad7-4e24-9fc9-469d8c1d7f97/c7e6d89d-c0f5-4e35-a472-ac44d3bcbb8b.mp4')
+    # put_s3_file(temp_video_file.name, S3_STORAGE_BUCKET, '71c2b411-5ad7-4e24-9fc9-469d8c1d7f97/c7e6d89d-c0f5-4e35-a472-ac44d3bcbb8b.mp4')
     temp_video_file.close()
 
     # Health check result
@@ -77,4 +103,4 @@ def app(event, context):
     }
 
 # For localhost test
-# app({}, {})
+app({}, {})
