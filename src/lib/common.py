@@ -10,7 +10,7 @@ def get_video_process(process_id):
         KeyConditionExpression = 'id = :id',
         ExpressionAttributeValues = {':id': process_id},
         Limit=1,
-    )
+    )['Items'][0]
 
 def get_s3_file(key):
     s3_response = s3.get_object(Bucket=S3_STORAGE_BUCKET, Key=key)

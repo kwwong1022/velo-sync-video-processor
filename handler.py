@@ -6,15 +6,17 @@ import cv2 as cv
 import xml.etree.ElementTree as ET
 from src.constant.constant import S3_STORAGE_BUCKET, SUFFIX_MP4
 from src.lib.common import get_video_process, get_s3_file, put_s3_file
+from src.lib.metric import get_gpx_metric
+from src.lib.style import get_display_items
 
 def app(event, context):
     print('Event: ' + json.dumps(event))
 
     # Retrieve file keys from database
-    db_response = get_video_process('c7e6d89d-c0f5-4e35-a472-ac44d3bcbb8b')
-    video_key = db_response['Items'][0]['videoKey']
-    gpx_key = db_response['Items'][0]['gpxKey']
-    style_key = db_response['Items'][0]['styleKey']
+    video_process = get_video_process('c7e6d89d-c0f5-4e35-a472-ac44d3bcbb8b')
+    video_key = video_process['videoKey']
+    gpx_key = video_process['gpxKey']
+    style_key = video_process['styleKey']
 
     # Retrieve files from s3
     video_bytes = get_s3_file(video_key).read()
@@ -27,41 +29,12 @@ def app(event, context):
     input_video = cv.VideoCapture(temp_video_file.name)
     temp_video_file.close()
 
-    # Prepare style data
-    style_string = style_bytes.decode('utf-8')
-    root = ET.fromstring(style_string)
-    print('root', root)
-
-
-    # Prepare gpx data
-    gpx_metric = []
-    gpx = gpxpy.parse(gpx_bytes)
-
-    for track in gpx.tracks:
-        for segment in track.segments:
-            for point in segment.points:
-                # Handle gpx general information
-                time = point.time
-                lat = point.latitude
-                long = point.longitude
-                atemp = hr = cad = power = 0
-
-                for extension in point.extensions:
-                    isTpe = 'TrackPointExtension' in extension.tag
-
-                    if isTpe:
-                        # Handle track point extension values
-                        for tpe in extension:
-                            atemp = tpe.text if 'atemp' in tpe.tag else 0
-                            hr = tpe.text if 'hr' in tpe.tag else 0
-                            cad = tpe.text if 'cad' in tpe.tag else 0
-
-                    else:
-                        # Handle power data
-                        power = extension.text if 'power' in extension.tag else 0
-
-                gpx_metric.append({ 'time':time, 'lat':lat, 'long':long, 'atemp':atemp, 'hr':hr, 'cad':cad, 'power':power })
-
+    # Prepare style & data
+    style_str = style_bytes.decode('utf-8')
+    style_element = ET.fromstring(style_str)
+    vid_offset = style_element.find('vidconf').find('offset').text
+    display_items = get_display_items(style_element)
+    gpx_metric = get_gpx_metric(gpx_bytes)
 
     # Create output video
     fourcc = cv.VideoWriter_fourcc(*'mp4v')
@@ -77,8 +50,8 @@ def app(event, context):
 
         if ret: 
             cv.putText(frame, 'TEXT ON VIDEO', (50, 50), 
-                    cv.FONT_HERSHEY_SIMPLEX, 
-                    1, (0, 255, 255), 2, cv.LINE_4)
+                cv.FONT_HERSHEY_SIMPLEX, 
+                1, (0, 255, 255), 2, cv.LINE_4)
                 
             output_video.write(frame)
             frame_count += 1
